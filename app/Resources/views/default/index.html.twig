@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div style="width: 70%; float:left">
+
+        <ul>
+            {% for index, player in strikeOrder %}
+                <li style="font-size:large">{{ index+1 }}
+                    <b>{{ player.name }}</b>,
+                    Speed: {{ player.speed }},
+                    Luck: {{ player.luck }},
+                    Health: {{ player.health }}
+                    {{ player.type }}
+                </li>
+            {% endfor %}
+        </ul>
+
+        <table>
+            {% for type, players in groupedPlayersByType %}
+                <tr>
+                    <td><b>{{ type }}</b></td>
+                    {% for player in players %}
+                        <td>
+                            {#<b>{{ player.name }}</b>#}
+                            Health: <b>{{ player.health }}</b>
+                            <img src="{{ '/characters/'~ player.picture }}" style="width: 150px; height: 300px"/>
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+
+        </table>
+    </div>
+
+
+    <div style="width: 30%;float: right;">
+        <ul>
+            {% for message in battleLog %}
+                <li style="text-align:center; font-size: 30px;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+{% endblock %}
+
+{% block stylesheets %}
+
+{% endblock %}
