@@ -8,6 +8,8 @@
 
 namespace AppBundle\Entity;
 
+use Doctrine\ORM\Mapping as ORM;
+
 /**
  * @ORM\Entity()
  * @ORM\Table(name="users_experience")
@@ -15,42 +17,16 @@ namespace AppBundle\Entity;
  */
 class UsersExperience
 {
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
-    private $id;
+
 
     /**
-     * UsersExperience have One UserIp.
-     * @ORM\OneToOne(targetEntity="LobbyCharacter")
-     * @ORM\JoinColumn(name="user_ip", referencedColumnName="user_ip")
+     * @ORM\Id
+     * @ORM\Column(type="string")
      */
     private $userIp;
 
     /** @ORM\Column(type="integer", name="experience") */
     private $experience;
-
-    /**
-     * @return mixed
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    /**
-     * @param mixed $id
-     *
-     * @return UsersExperience
-     */
-    public function setId($id)
-    {
-        $this->id = $id;
-
-        return $this;
-    }
 
     /**
      * @return mixed

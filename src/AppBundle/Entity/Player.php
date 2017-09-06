@@ -21,10 +21,53 @@ class Player
     private $picture;
     private $level;
     private $xp;
-
+    private $userIp;
+    private $lobbyCharacter;
 
     const HEROTYPE = 'HEROES';
     const BEASTTYPE = 'BEASTS';
+
+    /**
+     * @return mixed
+     */
+    public function getLobbyCharacter()
+    {
+        return $this->lobbyCharacter;
+    }
+
+    /**
+     * @param mixed $lobbyCharacter
+     *
+     * @return Player
+     */
+    public function setLobbyCharacter($lobbyCharacter)
+    {
+        $this->lobbyCharacter = $lobbyCharacter;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUserIp()
+    {
+        return $this->userIp;
+    }
+
+    /**
+     * @param mixed $userIp
+     *
+     * @return Player
+     */
+    public function setUserIp($userIp)
+    {
+        $this->userIp = $userIp;
+
+        return $this;
+    }
+
+
 
     /**
      * @return mixed
@@ -129,7 +172,7 @@ class Player
 
     public function setName($name): Player
     {
-        $this->name = $name;
+        $this->name = $name . ' ('.$this->getLevel().')';
 
         return $this;
     }
@@ -169,7 +212,8 @@ class Player
      */
     public function setHealth($health): Player
     {
-        $this->health = $health;
+        $this->health  = $health + 5*$this->getLevel();
+
 
         return $this;
     }
@@ -189,7 +233,7 @@ class Player
      */
     public function setStrength($strength): Player
     {
-        $this->strength = $strength;
+        $this->strength = $strength + 2*$this->getLevel();
 
         return $this;
     }
@@ -209,7 +253,7 @@ class Player
      */
     public function setDefence($defence): Player
     {
-        $this->defence = $defence;
+        $this->defence = $defence + $this->getLevel();
 
         return $this;
     }
@@ -229,7 +273,7 @@ class Player
      */
     public function setSpeed($speed): Player
     {
-        $this->speed = $speed;
+        $this->speed = $speed + $this->getLevel();
 
         return $this;
     }

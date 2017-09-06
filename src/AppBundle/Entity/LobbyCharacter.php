@@ -27,8 +27,11 @@ class LobbyCharacter
      * @ORM\JoinColumn(name="lobby_id", referencedColumnName="id")
      */
     private $lobby;
-
-    /** @ORM\Column(type="string", name="user_ip") */
+    /**
+     * LobbyCharacter have One UsersExperience.
+     * @ORM\OneToOne(targetEntity="AppBundle\Entity\UsersExperience")
+     * @ORM\JoinColumn(name="user_ip", referencedColumnName="user_ip")
+     */
     private $userIp;
 
     /** @ORM\Column(type="string", name="nickname") */
@@ -83,7 +86,7 @@ class LobbyCharacter
     }
 
     /**
-     * @return mixed
+     * @return UsersExperience
      */
     public function getUserIp()
     {

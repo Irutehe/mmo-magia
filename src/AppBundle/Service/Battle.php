@@ -28,7 +28,6 @@ class Battle
 
     public function sortPlayers(array $players): array
     {
-
         $speedArray = $this->sortBySpeed($players);
         $result     = $this->sortByLuck($players, $speedArray);
 
@@ -68,6 +67,25 @@ class Battle
         return $result;
     }
 
+    private function sortByType(array $players): array
+    {
+        $result = [];
+        $playersByType = [];
+        /**
+         * @var  $index
+         * @var Player $player
+         */
+        foreach ($players as $index => $player) {
+            $playersByType[$player->getType()][$index] = $player;
+        }
+
+        foreach ($playersByType as $pTy) {
+            $result = array_merge($result, $pTy);
+        }
+
+        return $result;
+    }
+
     public function groupPlayersByType(array $players): array
     {
         $result = [];
@@ -78,6 +96,7 @@ class Battle
 
         return $result;
     }
+
 
     public function getEnemy(array $players, string $friendlyType): array
     {
@@ -103,9 +122,18 @@ class Battle
         $this->addToBattleLog("{$attacker->getName()} strikes {$defender->getName()} with $finalDamage");
 
         if ($defender->getHealth() - $finalDamage <= 0) {
+            $this->gainXp($attacker, $defender);
             $this->addToBattleLog("{$defender->getName()} died.");
         }
         $defender->setHealth($defender->getHealth() - $finalDamage);
+
+    }
+
+    public function gainXp(Player $attacker, Player $defender)
+    {
+        $gainedXp   = ($defender->getLevel() / $attacker->getLevel());
+        $attackerXp = pow(10, $gainedXp) + 20 + $attacker->getXp();
+        $attacker->setXp($attackerXp)->setLevel($attackerXp);
 
     }
 
@@ -124,14 +152,13 @@ class Battle
     {
         $criticalDamage = 1;
 
-        if($this->hasChance($attacker->getLuck()))
-        {
+        if ($this->hasChance($attacker->getLuck())) {
             $criticalDamage = 1.5;
             $this->addToBattleLog('Critical Strike!');
         }
         $damage = $attacker->getStrength() - $defender->getDefence();
 
-        return $damage*$criticalDamage;
+        return $damage * $criticalDamage;
     }
 
 
@@ -175,11 +202,5 @@ class Battle
         return $multiplier;
     }
 
-    public function getLevel(Player $attacker, Player $defender)
-    {
-        if($attacker->getXp() > $defender->getXp()) {
-
-        }
-    }
 }
 

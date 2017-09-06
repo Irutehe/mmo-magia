@@ -107,3 +107,30 @@ input[type=checkbox]:checked + label:before {
     margin-left: -25px;*/
 
 }
+
+.HEROES {
+    width: 45%;
+    right:0;
+    position: absolute;
+    display: block;
+}
+
+.BEASTS {
+    width: 45%;
+    left:0;
+    position: absolute;
+    display: block;
+}
+
+.player-avatar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 60%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 200px;
+    height: 100%;
+}

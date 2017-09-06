@@ -3,47 +3,48 @@
     <link rel="stylesheet" href="{{ asset('collapsable.css') }}" xmlns=""/>
 {% endblock %}
 {% block body %}
+
     <div id="timer">
 
     </div>
-    <div style="width:60%;float: left;">
-        {% for lobbyCharacter in lobby.lobbyCharacters %}
-            <div style="width: 45%;float:left;height:400px;">
-                <div style="width:30%; float:left;">
-                    <img src="{{ '/characters/'~ lobbyCharacter.character.picture }}" style="width: 95%;cursor: pointer;" onclick = "alert('Lasa tatele;')"/>
+    <div style="width:60%;position: relative;">
+        {% for player in players %}
+            <div class="{{ player.type }}">
+                <div class="player-avatar" style="width:30%; float:left; background-image: url({{ '/characters/'~ player.lobbyCharacter.character.picture }})">
+                    {#<img src="{{ '/characters/'~ player.lobbyCharacter.character.picture }}" style="cursor: pointer;" onclick = ""/>#}
                 </div>
-                <div style="width: 60%;float:left;">
+                <div style="width: 60%;float:right;">
                     <table style="width: 100%;" border="1">
                         <tr>
-                            <td colspan="2">{{ lobbyCharacter.nickname }}</td>
+                            <td colspan="2">{{ player.name }}</td>
                         </tr>
                         <tr>
                             <td>Type</td>
-                            <td>{{ lobbyCharacter.character.type }}</td>
+                            <td>{{ player.type }}</td>
                         </tr>
                         <tr>
                             <td>Health</td>
-                            <td>{{ lobbyCharacter.character.health }}</td>
+                            <td>{{ player.health }}</td>
                         </tr>
                         <tr>
                             <td>Strength</td>
-                            <td>{{ lobbyCharacter.character.strength }}</td>
+                            <td>{{ player.strength }}</td>
                         </tr>
                         <tr>
                             <td>Defence</td>
-                            <td>{{ lobbyCharacter.character.defence }}</td>
+                            <td>{{ player.defence }}</td>
                         </tr>
                         <tr>
                             <td>Speed</td>
-                            <td>{{ lobbyCharacter.character.speed }}</td>
+                            <td>{{ player.speed }}</td>
                         </tr>
                         <tr>
                             <td>Luck</td>
-                            <td>{{ lobbyCharacter.character.luck }}</td>
+                            <td>{{ player.luck }}</td>
                         </tr>
                         <tr>
                             <td>Skills</td>
-                            {% for skill in lobbyCharacter.character.skills %}
+                            {% for skill in player.lobbyCharacter.character.skills %}
                                 <td>{{ skill.name }}</td>
                             {% endfor %}
                         </tr>
@@ -83,12 +84,12 @@
             var seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
             // Output the result in an element with id="demo"
-            document.getElementById("timer").innerHTML = hours + "h " + minutes + "m " + seconds + "s ";
+            document.getElementById("timer").innerHTML = hours + "h " + minutes + "m " + seconds + "s until next battle!";
 
             // If the count down is over, write some text
             if (distance < 0) {
                 clearInterval(x);
-                document.getElementById("timer").innerHTML = '<button type="button" onclick="startBattle(); disableButton(this);">Start battle </button>';
+                document.getElementById("timer").innerHTML = '<button type="button" onclick="startBattle(); disableButton(this);"><img src="/characters/source.gif" height="35"/></button>';
             }
         }, 1000);
 
@@ -106,6 +107,28 @@
         function disableButton(object){
             object.disabled = true;
         }
+
+        $(window).on('load', function(){
+            var $i_beasts = 0;
+            var $i_heroes = 0;
+            var $beasts_stats_height = 0;
+            var $heroes_stats_height = 0;
+
+           $('.BEASTS').each(function(){
+               if ($i_beasts > 0){
+                   $(this).attr('style', 'top: '+($beasts_stats_height)+'px');
+               }
+               $beasts_stats_height += $(this).find('table').outerHeight() + 20;
+               $i_beasts++;
+           });
+            $('.HEROES').each(function(){
+                if ($i_heroes > 0){
+                    $(this).attr('style', 'top: '+($heroes_stats_height)+'px');
+                }
+                $beasts_stats_height += $(this).find('table').outerHeight() + 20;
+                $i_heroes++;
+            });
+        });
     </script>
 
 {% endblock %}

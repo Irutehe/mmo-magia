@@ -8,6 +8,8 @@ namespace AppBundle\Service;
 use AppBundle\Entity\Characters;
 use AppBundle\Entity\Lobby;
 use AppBundle\Entity\LobbyCharacter;
+use AppBundle\Entity\Player;
+use AppBundle\Entity\UsersExperience;
 use Doctrine\ORM\EntityManager;
 
 class LobbyService
@@ -42,15 +44,15 @@ class LobbyService
         return $lobby;
     }
 
-    public function getLobbyCharacterForIp(Lobby $lobby, string $ip)
+    public function getLobbyCharacterForIp(Lobby $lobby, UsersExperience $usersExperience)
     {
         $repo = $this->entityManager->getRepository(LobbyCharacter::class);
 
-        return $repo->findOneBy(['userIp' => $ip, 'lobby' => $lobby]);
+        return $repo->findOneBy(['userIp' => $usersExperience, 'lobby' => $lobby]);
     }
 
 
-    public function addNewCharacterToLobby(Lobby $lobby, string $ip)
+    public function addNewCharacterToLobby(Lobby $lobby, UsersExperience $userExperience)
     {
         $lobbyCharacter = new LobbyCharacter();
 
@@ -61,7 +63,7 @@ class LobbyService
         }
 
         $character = $availableCharacters[array_rand($availableCharacters)];
-        $lobbyCharacter->setCharacter($character)->setUserIp($ip)->setLobby($lobby);
+        $lobbyCharacter->setCharacter($character)->setUserIp($userExperience)->setLobby($lobby);
         $this->entityManager->persist($lobbyCharacter);
         $this->entityManager->flush();
 
@@ -102,12 +104,39 @@ class LobbyService
     {
         /** @var LobbyCharacter $lobbyCharacter */
         foreach ($lobbyCharacterList as $lobbyCharacter) {
-            if ($lobbyCharacter->getUserIp() === $ip) {
+            if ($lobbyCharacter->getUserIp()->getUserIp() === $ip) {
                 return $lobbyCharacter->getCharacter();
             }
         }
 
         return null;
+    }
+
+    public function saveGainedXpToUsersExperience(array $players)
+    {
+        $repo = $this->entityManager->getRepository(UsersExperience::class);
+        /** @var Player $player */
+        foreach ($players as $player)
+        {
+            $usersExperience = $repo->findOneBy(['userIp'=>$player->getUserIp()]);
+            $usersExperience->setExperience($player->getXp());
+            $this->entityManager->persist($usersExperience);
+        }
+        $this->entityManager->flush();
+    }
+
+    public function getUserExperience(string $ip)
+    {
+        $userExperience = $this->entityManager->getRepository(UsersExperience::class)->findOneBy(['userIp' => $ip]);
+
+        if(!$userExperience){
+            $userExperience = new UsersExperience();
+            $userExperience->setUserIp($ip)->setExperience(0);
+            $this->entityManager->persist($userExperience);
+            $this->entityManager->flush();
+
+        }
+        return $userExperience;
     }
 
 }

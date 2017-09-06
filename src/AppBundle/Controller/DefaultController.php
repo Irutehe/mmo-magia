@@ -2,7 +2,6 @@
 
 namespace AppBundle\Controller;
 
-use AppBundle\Entity\Characters;
 use AppBundle\Entity\Lobby;
 use AppBundle\Entity\LobbyCharacter;
 use AppBundle\Entity\Player;
@@ -35,46 +34,10 @@ class DefaultController extends Controller
         if (!$lobbyCharacters) {
             throw new \Exception("Nu exista caractere");
         }
-
-        /** @var CharacterFactory $characterFactory */
-        $characterFactory = $this->get('character_factory');
-        $players          = [];
-
-        /** @var LobbyCharacter $lobbyCharacter */
-        foreach ($lobbyCharacters as $lobbyCharacter) {
-
-            $player = $characterFactory->createPlayer(
-                $lobbyCharacter->getNickname() ? :  $lobbyCharacter->getCharacter()->getName(),
-                $lobbyCharacter->getCharacter()->getHealth(),
-                $lobbyCharacter->getCharacter()->getStrength(),
-                $lobbyCharacter->getCharacter()->getDefence(),
-                $lobbyCharacter->getCharacter()->getSpeed(),
-                $lobbyCharacter->getCharacter()->getLuck(),
-                $lobbyCharacter->getCharacter()->getType(),
-                $lobbyCharacter->getCharacter()->getPicture()
-            );
-            /** @var SkillFactory $skillFactory */
-            $skillFactory = $this->get('skill_factory');
-            $skills = [];
-            /** @var Skill $skillStat */
-            foreach ($lobbyCharacter->getCharacter()->getSkills() as $skillStat) {
-                $skills[] = $skillFactory->createSkill(
-                    $skillStat->getClassName(),
-                    $skillStat->getName(),
-                    $skillStat->getChance(),
-                    $skillStat->getApplyOnDefence(),
-                    $skillStat->getApplyOnAttack()
-                );
-            }
-            $player->setSkills($skills);
-
-            $players[] = $player;
-        }
-
+        $players              = $this->createPlayers($lobbyCharacters);
         $battle               = $this->get('battle');
         $strikeOrder          = $battle->sortPlayers($players);
         $groupedPlayersByType = $battle->groupPlayersByType($players);
-
 
         $winningTeam = null;
         $round       = 0;
@@ -100,6 +63,7 @@ class DefaultController extends Controller
         $lobby->setBattleLog(json_encode($battle->getBattleLog()))->setStatus(Lobby::STATUS_FINISHED);
 
         $lobbyService->saveLobby($lobby);
+        $lobbyService->saveGainedXpToUsersExperience($players);
 
         return $this->render(
             'default/index.html.twig',
@@ -118,29 +82,31 @@ class DefaultController extends Controller
      */
     public function lobbyAction(Request $request)
     {
-        $userBattles  = [];
-        $ip           = $request->getClientIp();
-        $lobbyService = $this->get('lobby_service');
-        $lobby        = $lobbyService->getPendingLobby();
+        $userBattles    = [];
+        $ip             = $request->getClientIp();
+        $lobbyService   = $this->get('lobby_service');
+        $lobby          = $lobbyService->getPendingLobby();
+        $userExperience = $lobbyService->getUserExperience($ip);
+
         if (!$lobby) {
             $lobby = $lobbyService->addPendingLobby();
         }
-        $lobbyCharacter = $lobbyService->getLobbyCharacterForIp($lobby, $ip);
+        $lobbyCharacter = $lobbyService->getLobbyCharacterForIp($lobby, $userExperience);
 
         if (!$lobbyCharacter) {
-            $lobbyCharacter = $lobbyService->addNewCharacterToLobby($lobby, $ip);
+            $lobbyCharacter = $lobbyService->addNewCharacterToLobby($lobby, $userExperience);
             if (!$lobbyCharacter) {
                 return $this->battleAction();
             }
         }
 
-        if(!$lobbyCharacter->getNickname())
-        {
+        if (!$lobbyCharacter->getNickname()) {
             return $this->redirectToRoute('addNickname');
         }
 
 
         $lobbies = $lobbyService->getUserLobbies($ip);
+        $players = $this->createPlayers($lobby->getLobbyCharacters());
 
         /** @var Lobby $userLobby */
         foreach ($lobbies as $userLobby) {
@@ -148,14 +114,14 @@ class DefaultController extends Controller
             $battleLog     = str_replace($myCharacter->getType(), $myCharacter->getType() . '(You)', $userLobby->getBattleLog());
             $userBattles[] = json_decode($battleLog);
         }
-
+        $time = strtotime($lobby->getCreated()->format("Y-m-d H:i:s" ))+3600;
         return $this->render(
             'default/lobby.html.twig',
-                             [
-                                 'lobby' => $lobby,
-                                 'battles' => $userBattles,
-                                 'endTime' => $lobby->getCreated()->add(new \DateInterval('PT3H'))->format("Y-m-d h:i:s")
-                             ]
+            [
+                'players' => $players,
+                'battles' => $userBattles,
+                'endTime' => date("Y-m-d H:i:s",$time)
+            ]
         );
     }
 
@@ -170,25 +136,62 @@ class DefaultController extends Controller
         if (!$lobby) {
             $lobby = $lobbyService->addPendingLobby();
         }
-        $lobbyCharacter = $lobbyService->getLobbyCharacterForIp($lobby, $ip);
+        $userExperience = $lobbyService->getUserExperience($ip);
+        $lobbyCharacter = $lobbyService->getLobbyCharacterForIp($lobby, $userExperience);
 
         $form = $this->createFormBuilder($lobbyCharacter)
             ->add('nickname', TextType::class)
-            ->add('save', SubmitType::class, ['label'=>'Save Nickname'])
+            ->add('save', SubmitType::class, ['label' => 'Save Nickname'])
             ->getForm();
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-             $em = $this->getDoctrine()->getManager();
-             $em->persist($lobbyCharacter);
-             $em->flush();
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($lobbyCharacter);
+            $em->flush();
 
             return $this->redirectToRoute('lobby');
         }
 
-        return $this->render('default/addNickname.html.twig', ['form'=>$form->createView()]);
+        return $this->render('default/addNickname.html.twig', ['form' => $form->createView()]);
+    }
+
+    /**
+     * @param $lobbyCharacters
+     *
+     * @return array
+     */
+    private function createPlayers($lobbyCharacters): array
+    {
+        /** @var CharacterFactory $characterFactory */
+        $characterFactory = $this->get('character_factory');
+        $players          = [];
+
+        /** @var LobbyCharacter $lobbyCharacter */
+        foreach ($lobbyCharacters as $lobbyCharacter) {
+
+            $player = $characterFactory->createPlayer($lobbyCharacter);
+            /** @var SkillFactory $skillFactory */
+            $skillFactory = $this->get('skill_factory');
+            $skills       = [];
+            /** @var Skill $skillStat */
+            foreach ($lobbyCharacter->getCharacter()->getSkills() as $skillStat) {
+                $skills[] = $skillFactory->createSkill(
+                    $skillStat->getClassName(),
+                    $skillStat->getName(),
+                    $skillStat->getChance(),
+                    $skillStat->getApplyOnDefence(),
+                    $skillStat->getApplyOnAttack()
+                );
+            }
+            $player->setSkills($skills);
+
+            $players[] = $player;
+        }
+
+        return $players;
     }
 
 }
